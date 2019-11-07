@@ -1,1 +1,49 @@
-@import '../node_modules/bulma/bulma.sass'
+@import '../node_modules/bulma/bulma.sass';
+
+$app-yellow: #ff9300;
+$app-ligth-blue: #a3ecf3;
+$app-blue: #00bfd6;
+$app-black: #212121;
+
+form {
+
+  .form-group {
+    margin-top: 10px;
+    margin-bottom: 25px;
+
+    label {
+      display: block;
+      color: $app-yellow;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+
+    input {
+      display: block;
+      width: 100%;
+      padding: 5px 5px;
+      margin-top: 5px;
+      font-size: 1.2em;
+      border: none;
+      border-bottom: 2px solid $app-yellow;
+    }
+  }
+}
+
+.btn-primary {
+  background: $app-blue;
+  color: white;
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 15px 60px;
+  border: none;
+  border-radius: 2px;
+
+  &:hover {
+    background: $app-ligth-blue;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
