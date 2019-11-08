@@ -124,6 +124,11 @@ export default {
     onSwitchFormToLogin: function() {
       this.signin = false;
     }
+  },
+  watch: {
+    email: function(new_val, past_val) {
+      console.log(new_val, past_val)
+    }
   }
 }
 </script>
