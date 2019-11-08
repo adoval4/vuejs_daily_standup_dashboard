@@ -71,6 +71,9 @@
           >
         </div>
         <div class="form-group btn-container">
+          <span v-if="full_name">
+            Bienvenido {{ full_name }}!
+          </span>
           <button id="send-btn" type="button" name="button" class="btn-primary">
             Crear
           </button>
@@ -107,6 +110,11 @@ export default {
       first_name: '',
       last_name: '',
       job_title: ''
+    }
+  },
+  computed: {
+    full_name: function() {
+      return `${this.first_name}  ${this.last_name}`
     }
   },
   methods: {
