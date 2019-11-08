@@ -26,6 +26,11 @@ form {
       font-size: 1.2em;
       border: none;
       border-bottom: 2px solid $app-yellow;
+
+      &:focus {
+        outline: none;
+        border-bottom-color: $app-blue;
+      }
     }
   }
 }
@@ -40,6 +45,7 @@ form {
   border-radius: 2px;
 
   &:hover {
+    color: $app-black;
     background: $app-ligth-blue;
   }
 
@@ -47,3 +53,32 @@ form {
     outline: none;
   }
 }
+
+.btn-link {
+  background: #eee;
+  color: $app-blue;
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 15px 60px;
+  border: none;
+  border-radius: 2px;
+
+  &:hover {
+    background: $app-ligth-blue;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.navbar {
+  padding: 5px 0px;
+  margin-top: 20px;
+  display: flex;
+
+  .nav-item {
+    padding: 0px 5px;
+  }
+}
+
