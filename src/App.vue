@@ -5,34 +5,59 @@
         <span class="title">
           Daily Bot
         </span>
-        <a
-          class="button"
-          v-on:click="onCallBtnClick"
-        >
-          Llamar
-        </a>
-        <a
-          class="button"
-          v-bind:class="{
-            'is-info': !running,
-            'is-link': (running && !time_is_over),
-            'is-danger': (running && time_is_over)
-          }"
-          v-on:click="onTimerBtnClick"
-        >
-          {{ time_left_str }}
-        </a>
-        <a class="button is-success" v-on:click="onSendClick">
-          Enviar
-        </a>
+        <span>
+          <a
+            v-bind:href="meeting_link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Meeting link
+          </a>
+        </span>
+        <span class="options">
+          <a
+            class="button is-danger is-light"
+            v-on:click="onDeleteDataClick"
+          >
+            Borrar todo
+          </a>
+          <a
+            class="button"
+            v-on:click="onCallBtnClick"
+          >
+            Llamar
+          </a>
+          <a
+            class="button"
+            v-bind:class="{
+              'is-info': !running,
+              'is-link': (running && !time_is_over),
+              'is-danger': (running && time_is_over)
+            }"
+            v-on:click="onTimerBtnClick"
+          >
+            {{ time_left_str }}
+          </a>
+          <a
+            class="button is-success"
+            v-on:click="onSendClick"
+          >
+            <span v-if="!sent">
+              Enviar
+            </span>
+            <span v-if="sent">
+              Enviado
+            </span>
+          </a>
+        </span>
       </div>
     </nav>
     <section class="section">
       <div class="container main-container">
-        <div class="columns">
+        <div v-if="!data" class="columns">
           <div class="column">
             <div class="">
-              <h1>Ayer</h1>
+              <h1>Data como texto</h1>
             </div>
             <div class="field">
               <div class="control">
@@ -93,7 +118,7 @@
                         class="button is-small is-danger is-light"
                         v-on:click="onDeleteGoalClick(person_index, goal_index)"
                       >
-                        Borrar
+                        &times;
                       </a>
                     </li>
                   </ul>
@@ -117,6 +142,7 @@
 
 <script>
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 function copyObj(obj) {
   return JSON.parse(
@@ -168,7 +194,9 @@ export default {
       running: false,
       time_passed_ms: 0,
       init_data: '',
-      data: null
+      data: null,
+      meeting_link: MEET_LINK,
+      sent: false
     }
   },
   mounted: function() {
@@ -178,9 +206,10 @@ export default {
       }
     }, INTERVAL_MS);
 
-    setTimeout(()=>{
-      this.past_data = INIT_DATA;
-    }, 1000)
+    let init_data_cookie = Cookies.get('init_data');
+    if(init_data_cookie) {
+      this.data = JSON.parse(init_data_cookie);
+    }
   },
   computed: {
     time_left_str: function() {
@@ -222,7 +251,8 @@ export default {
       },0);
     },
     loadData: function() {
-      const past_data = this.past_data;
+      const past_data = copyObj(this.init_data);
+      console.log(past_data);
       const lines = past_data.split('\n');
       let parsed_obj = [];
       lines.map((line) => {
@@ -255,21 +285,34 @@ export default {
           })
         }
       });
+      console.log(parsed_obj);
       this.data = parsed_obj;
     },
     onNotDoneBtnClick: function(person_index, goal_index) {
       let data = copyObj(this.data);
-      data[person_index].goals[goal_index].status = "NOT_DONE";
+      if(data[person_index].goals[goal_index].status != "NOT_DONE") {
+        data[person_index].goals[goal_index].status = "NOT_DONE";
+      } else {
+        data[person_index].goals[goal_index].status = null;
+      }
       this.data = data;
     },
     onInProgressBtnClick: function(person_index, goal_index) {
       let data = copyObj(this.data);
-      data[person_index].goals[goal_index].status = "IN_PROGRESS";
+      if(data[person_index].goals[goal_index].status != "IN_PROGRESS") {
+        data[person_index].goals[goal_index].status = "IN_PROGRESS";
+      } else {
+        data[person_index].goals[goal_index].status = null;
+      }
       this.data = data;
     },
     onDoneBtnClick: function(person_index, goal_index) {
       let data = copyObj(this.data);
-      data[person_index].goals[goal_index].status = "DONE";
+      if(data[person_index].goals[goal_index].status != "DONE") {
+        data[person_index].goals[goal_index].status = "DONE";
+      } else {
+        data[person_index].goals[goal_index].status = null;
+      }
       this.data = data;
     },
     addGoalToPerson: function(event, person_index) {
@@ -288,17 +331,27 @@ export default {
     },
     onSendClick: function() {
       let data = copyObj(this.data);
+
+      Cookies.set('init_data', JSON.stringify(data))
+
       let to_do_message = ``;
-      data.map((person, index) => {
+      let filtered_data = data.map((person, index) => {
         if(index > 0){ to_do_message += '\n' }
         to_do_message += `@${person.name}\n`
-        person.goals.map((goal) => {
+        let new_goals = person.goals.filter((goal) => {
           const to_do = goal.status != 'DONE';
           if(to_do) {
             to_do_message += `- ${goal.description}\n`
           }
+          return to_do;
         })
+        person.goals = new_goals;
+        return person;
       });
+
+      Cookies.set('init_data', JSON.stringify(filtered_data))
+
+      this.data = filtered_data;
 
       axios.post(
         SLACK_CHANNEL_WEBHOOK_URL,
@@ -306,6 +359,11 @@ export default {
           text: to_do_message
         })
       )
+
+      this.sent = true;
+    },
+    onDeleteDataClick: function() {
+      this.data = null;
     }
   }
 }
@@ -330,11 +388,16 @@ export default {
   }
 
   nav.nav.has-shadow {
-      padding: 20px;
-      position: fixed;
-      z-index: 100;
-      background: white;
-      width: 100%;
+    padding: 15px 20px;
+    position: fixed;
+    z-index: 100;
+    background: white;
+    width: 100%;
+    box-shadow: 0px 0px 8px #0000005c;
+
+    .options {
+      float: right;
+    }
   }
 
   .person-container {
