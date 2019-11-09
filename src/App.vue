@@ -208,7 +208,9 @@
           >
             Save
           </button>
-          <button class="button" v-on:click="onCloseSettingsModal">Cancel</button>
+          <button class="button" v-on:click="onCloseSettingsModal">
+            Cancel
+          </button>
         </footer>
       </div>
     </div>
@@ -217,8 +219,8 @@
 </template>
 
 <script>
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import CookieStorage from './services/cookie-storage.js'
+import SlackClient from './services/slack.js';
 
 function copyObj(obj) {
   return JSON.parse(
@@ -232,6 +234,8 @@ export default {
   name: 'app',
   data () {
     return {
+      slack_client: null,
+      cookie_storage: new CookieStorage(),
       current_time_ms: null,
       running: false,
       time_passed_ms: 0,
@@ -253,15 +257,15 @@ export default {
       }
     }, INTERVAL_MS);
 
-    let settings_cookie = Cookies.get('settings');
-    if(settings_cookie) {
-      this.settings = JSON.parse(settings_cookie);
+    let settings = this.cookie_storage.getSettings();
+    if(settings) {
+      this.settings = settings;
     }
     this.show_settings = !this.areSettingsComplete();
 
-    let init_data_cookie = Cookies.get('init_data');
-    if(init_data_cookie) {
-      this.data = JSON.parse(init_data_cookie);
+    let init_data = this.cookie_storage.getData();
+    if(init_data) {
+      this.data = init_data;
     }
   },
   computed: {
@@ -290,13 +294,14 @@ export default {
       ) { return false; }
 
       this.current_time_ms = this.settings.duration_minutes * 60 * 1000;
+      this.slack_client = new SlackClient(this.settings.slack_webhook);
 
       return true;
     },
     onSaveSettingsBtnClick: function() {
       const settingsComplete = this.areSettingsComplete();
       if(settingsComplete) {
-        Cookies.set('settings', JSON.stringify(this.settings));
+        this.cookie_storage.saveSettings(this.settings);
       }
       this.show_settings = !settingsComplete;
     },
@@ -311,12 +316,9 @@ export default {
     },
     onCallBtnClick: function() {
       // send alert to channel
-      axios.post(
-        this.settings.slack_webhook,
-        JSON.stringify({
-          text: `<!channel> Daily -> ${MEET_LINK}`
-        })
-      )
+      this.slack_client.sendMessage(
+        `<!channel> Daily -> ${this.settings.meeting_link}`
+      );
     },
     autosize: function(event) {
       var el = event.target;
@@ -410,8 +412,6 @@ export default {
     onSendClick: function() {
       let data = copyObj(this.data);
 
-      Cookies.set('init_data', JSON.stringify(data))
-
       let to_do_message = ``;
       let filtered_data = data.map((person, index) => {
         if(index > 0){ to_do_message += '\n' }
@@ -427,17 +427,10 @@ export default {
         return person;
       });
 
-      Cookies.set('init_data', JSON.stringify(filtered_data))
-
+      this.cookie_storage.saveData(filtered_data);
       this.data = filtered_data;
 
-      axios.post(
-        this.settings.slack_webhook,
-        JSON.stringify({
-          text: to_do_message
-        })
-      )
-
+      this.slack_client.sendMessage(to_do_message);
       this.sent = true;
     },
     onDeleteDataClick: function() {
