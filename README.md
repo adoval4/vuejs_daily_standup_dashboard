@@ -1,6 +1,6 @@
-# music-app
+# Daily Standup Dashboard
 
-> App de curso profesional de Vue.js 
+> A Vue.js app that helps me to track the to-do list of my team members and it's integrated with Slack.
 
 ## Build Setup
 
