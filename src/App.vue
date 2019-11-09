@@ -7,14 +7,20 @@
         </span>
         <span>
           <a
-            v-bind:href="meeting_link"
+            v-bind:href="settings.meeting_link"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Meeting link
+            Conference link
           </a>
         </span>
         <span class="options">
+          <a
+            class="button is-light"
+            v-on:click="onSettingsBtnClick"
+          >
+            <font-awesome-icon icon="cog" />
+          </a>
           <a
             class="button is-danger is-light"
             v-on:click="onDeleteDataClick"
@@ -137,6 +143,76 @@
         </div>
       </div>
     </section>
+
+    <div
+      class="modal"
+      v-bind:class="{'is-active': show_settings}"
+    >
+      <div class="modal-background" v-on:click="onCloseSettingsModal"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Settings</p>
+          <button class="delete" aria-label="close" v-on:click="onCloseSettingsModal">
+          </button>
+        </header>
+        <section class="modal-card-body">
+          <form class="form">
+            <div class="field">
+              <label class="label">Slack channel incoming webhook</label>
+              <div class="control">
+                <input
+                  class="input"
+                  v-bind:class="{ 'is-danger': !settings.slack_webhook }"
+                  type="text"
+                  placeholder="Copy Slack channel webhook"
+                  v-model="settings.slack_webhook"
+                >
+              </div>
+              <p class="help">
+                A slack incoming webhook allow you to send messages to a specific converstion.
+                <a href="https://api.slack.com/messaging/webhooks">See more</a>
+              </p>
+            </div>
+            <div class="field">
+              <label class="label">Conference link</label>
+              <div class="control">
+                <input
+                  class="input"
+                  v-bind:class="{ 'is-danger': !settings.meeting_link }"
+                  type="text"
+                  placeholder="Copy conference link"
+                  v-model="settings.meeting_link"
+                >
+              </div>
+              <p class="help">The link where the video conference will be held.</p>
+            </div>
+            <div class="field">
+              <label class="label">Duration in minutes</label>
+              <div class="control">
+                <input
+                  class="input"
+                  v-bind:class="{ 'is-danger': !settings.duration_minutes }"
+                  type="number"
+                  placeholder="Total minutes the meeting should last"
+                  v-model="settings.duration_minutes"
+                >
+              </div>
+              <p class="help">The link where the video conference will be held.</p>
+            </div>
+          </form>
+        </section>
+        <footer class="modal-card-foot">
+          <button
+            class="button is-success"
+            v-on:click="onSaveSettingsBtnClick"
+          >
+            Save
+          </button>
+          <button class="button" v-on:click="onCloseSettingsModal">Cancel</button>
+        </footer>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -150,53 +226,24 @@ function copyObj(obj) {
   )
 }
 
-const SLACK_CHANNEL_WEBHOOK_URL = "https://hooks.slack.com/services/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"; //adolfovaldi
-// const SLACK_CHANNEL_WEBHOOK_URL = "https://hooks.slack.com/services/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"; //daily channel
-const MEET_LINK = "https://meet.google.com/vmo-yxuk-eok";
-const MINUTES = 20;
 const INTERVAL_MS = 100;
-
-const INIT_DATA = `@Pedro
-- comparación de floracion para chapi
-- evaluar floración vs data manual
-- get up to speed with berend
-
-@Waldo
-- evaluar metrics en producción
-- especificaciones para consolidación de datos de formularios a records
-
-@Daniel
-- alerts admin panel markup
-- alerts admin panel list
-- alerts admin panel create
-- alerts admin panel add/remove recipient
-
-@Berend
-- get Pedro up to speed
-- specifications for harvester leaderboard
-
-@Adolfo
-- revisar propuesta de integración de formularios a records
-- small fixes in variables admin panel
-- week review/ next goals
-- setup meeting to review admin panel variable with hortifrut
-- test alert email
-- 1 on 1 waldo
-- 1 on 1 pedro
-- new metrics to production
-`;
 
 export default {
   name: 'app',
   data () {
     return {
-      current_time_ms: MINUTES*60*1000,
+      current_time_ms: null,
       running: false,
       time_passed_ms: 0,
       init_data: '',
       data: null,
-      meeting_link: MEET_LINK,
-      sent: false
+      sent: false,
+      show_settings: false,
+      settings: {
+        slack_webhook: null,
+        meeting_link: null,
+        duration_minutes: null,
+      }
     }
   },
   mounted: function() {
@@ -205,6 +252,12 @@ export default {
         this.current_time_ms -= INTERVAL_MS;
       }
     }, INTERVAL_MS);
+
+    let settings_cookie = Cookies.get('settings');
+    if(settings_cookie) {
+      this.settings = JSON.parse(settings_cookie);
+    }
+    this.show_settings = !this.areSettingsComplete();
 
     let init_data_cookie = Cookies.get('init_data');
     if(init_data_cookie) {
@@ -228,13 +281,38 @@ export default {
     }
   },
   methods: {
+    areSettingsComplete: function() {
+      if(!this.settings.slack_webhook) { return false; }
+      if(!this.settings.meeting_link) { return false; }
+      if(
+        !this.settings.duration_minutes ||
+        isNaN(this.settings.duration_minutes)
+      ) { return false; }
+
+      this.current_time_ms = this.settings.duration_minutes * 60 * 1000;
+
+      return true;
+    },
+    onSaveSettingsBtnClick: function() {
+      const settingsComplete = this.areSettingsComplete();
+      if(settingsComplete) {
+        Cookies.set('settings', JSON.stringify(this.settings));
+      }
+      this.show_settings = !settingsComplete;
+    },
+    onSettingsBtnClick: function(){
+      this.show_settings = true;
+    },
+    onCloseSettingsModal: function(){
+      this.show_settings = !this.areSettingsComplete();
+    },
     onTimerBtnClick: function() {
       this.running = !this.running;
     },
     onCallBtnClick: function() {
       // send alert to channel
       axios.post(
-        SLACK_CHANNEL_WEBHOOK_URL,
+        this.settings.slack_webhook,
         JSON.stringify({
           text: `<!channel> Daily -> ${MEET_LINK}`
         })
@@ -354,7 +432,7 @@ export default {
       this.data = filtered_data;
 
       axios.post(
-        SLACK_CHANNEL_WEBHOOK_URL,
+        this.settings.slack_webhook,
         JSON.stringify({
           text: to_do_message
         })
@@ -390,7 +468,7 @@ export default {
   nav.nav.has-shadow {
     padding: 15px 20px;
     position: fixed;
-    z-index: 100;
+    z-index: 2;
     background: white;
     width: 100%;
     box-shadow: 0px 0px 8px #0000005c;
@@ -417,6 +495,7 @@ export default {
       margin-left: 10px;
       display: inline-block;
       min-height: auto;
+      z-index: 0;
     }
   }
 
