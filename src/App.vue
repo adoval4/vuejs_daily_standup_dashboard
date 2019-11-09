@@ -3,7 +3,7 @@
     <nav class="nav has-shadow">
       <div class="container">
         <span class="title">
-          Daily Bot
+          Daily Standup
         </span>
         <span>
           <a
@@ -25,13 +25,13 @@
             class="button is-danger is-light"
             v-on:click="onDeleteDataClick"
           >
-            Borrar todo
+            Delete all
           </a>
           <a
             class="button"
             v-on:click="onCallBtnClick"
           >
-            Llamar
+            Call @channel
           </a>
           <a
             class="button"
@@ -42,17 +42,17 @@
             }"
             v-on:click="onTimerBtnClick"
           >
-            {{ time_left_str }}
+            Time: {{ time_left_str }}
           </a>
           <a
             class="button is-success"
             v-on:click="onSendClick"
           >
             <span v-if="!sent">
-              Enviar
+              Save
             </span>
             <span v-if="sent">
-              Enviado
+              Saved
             </span>
           </a>
         </span>
@@ -63,7 +63,7 @@
         <div v-if="!data" class="columns">
           <div class="column">
             <div class="">
-              <h1>Data como texto</h1>
+              <h1>Data as text</h1>
             </div>
             <div class="field">
               <div class="control">
@@ -79,7 +79,7 @@
           </div>
         </div>
         <div v-if="data" class="columns">
-          <div class="column">
+          <div class="column is-full">
             <div
               class="person-container"
               v-for="(person, person_index) in data"
@@ -134,8 +134,22 @@
                 <input
                   type="text"
                   class="input"
-                  placeholder="Nueva meta"
+                  placeholder="New goal"
                   v-on:keyup.enter="addGoalToPerson($event, person_index)"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="data" class="columns">
+          <div class="column is-full">
+            <div class="field">
+              <label class="label">+ Add new person</label>
+              <div class="control">
+                <input
+                  class="input"
+                  placeholder="New person"
+                  v-on:keyup.enter="addPerson"
                 >
               </div>
             </div>
@@ -322,9 +336,9 @@ export default {
     },
     autosize: function(event) {
       var el = event.target;
-      this.autoresize_textarea(el);
+      this.autoresizeTextarea(el);
     },
-    autoresize_textarea: function(el) {
+    autoresizeTextarea: function(el) {
       setTimeout(function(){
         el.style.cssText = 'height:auto; padding:0';
         el.style.cssText = 'height:' + 1.1*el.scrollHeight + 'px';
@@ -393,6 +407,15 @@ export default {
       } else {
         data[person_index].goals[goal_index].status = null;
       }
+      this.data = data;
+    },
+    addPerson:  function(event){
+      let data = copyObj(this.data);
+      data.push({
+        name: event.target.value,
+        goals: []
+      });
+      event.target.value = '';
       this.data = data;
     },
     addGoalToPerson: function(event, person_index) {
