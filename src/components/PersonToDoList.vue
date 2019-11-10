@@ -75,9 +75,6 @@ import { copyObj } from '../utils.js'
 Vue.use(VTooltip)
 
 export default {
-  components: [
-    VTooltip
-  ],
   props: [
     'key',
     'person'
