@@ -14,7 +14,7 @@
             Conference link
           </a>
         </span>
-        <span class="options">
+        <span class="options is-pulled-right">
           <a
             class="button is-light"
             v-on:click="onSettingsBtnClick"
@@ -33,17 +33,9 @@
           >
             Call @channel
           </a>
-          <a
-            class="button"
-            v-bind:class="{
-              'is-info': !running,
-              'is-link': (running && !time_is_over),
-              'is-danger': (running && time_is_over)
-            }"
-            v-on:click="onTimerBtnClick"
-          >
-            Time: {{ time_left_str }}
-          </a>
+          <timer-button
+            v-bind:total_time_ms="settings.duration_minutes * 60 * 1000"
+          />
           <a
             class="button is-success"
             v-on:click="onSendClick"
@@ -80,65 +72,13 @@
         </div>
         <div v-if="data" class="columns">
           <div class="column is-full">
-            <div
-              class="person-container"
+            <person-to-do-list
               v-for="(person, person_index) in data"
+              v-bind:person="person"
               v-bind:key="person_index"
-            >
-              <div class="person-name">
-                {{ person.name }}
-              </div>
-              <ul>
-                <li
-                  class="goal-item"
-                  v-for="(goal, goal_index) in person.goals"
-                  v-bind:key="goal_index"
-                >
-                  <span>
-                    - {{ goal.description }}
-                  </span>
-                  <ul class="navbar goal-navbar">
-                    <li>
-                      <a
-                        class="button is-small"
-                        v-bind:class="{ 'is-danger': goal.status == 'NOT_DONE' }"
-                        v-on:click="onNotDoneBtnClick(person_index, goal_index)"
-                      >
-                        NOT DONE
-                      </a>
-                      <a
-                        class="button is-small"
-                        v-bind:class="{ 'is-warning': goal.status == 'IN_PROGRESS' }"
-                        v-on:click="onInProgressBtnClick(person_index, goal_index)"
-                      >
-                        IN PROGRESS
-                      </a>
-                      <a
-                        class="button is-small"
-                        v-bind:class="{ 'is-success': goal.status == 'DONE' }"
-                        v-on:click="onDoneBtnClick(person_index, goal_index)"
-                      >
-                        DONE
-                      </a>
-                      <a
-                        class="button is-small is-danger is-light"
-                        v-on:click="onDeleteGoalClick(person_index, goal_index)"
-                      >
-                        &times;
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-              <div class="">
-                <input
-                  type="text"
-                  class="input"
-                  placeholder="New goal"
-                  v-on:keyup.enter="addGoalToPerson($event, person_index)"
-                >
-              </div>
-            </div>
+              v-on:change="onPersonChange(person_index, $event)"
+              v-on:delete="onPersonDelete(person_index)"
+            />
           </div>
         </div>
         <div v-if="data" class="columns">
@@ -233,24 +173,28 @@
 </template>
 
 <script>
+// Services
 import CookieStorage from './services/cookie-storage.js'
 import SlackClient from './services/slack.js';
 
-function copyObj(obj) {
-  return JSON.parse(
-    JSON.stringify(obj)
-  )
-}
+// Utilities
+import { copyObj } from './utils.js'
 
-const INTERVAL_MS = 100;
+// Components
+import TimerButton from './components/TimerButton.vue';
+import PersonToDoList from './components/PersonToDoList.vue';
+
 
 export default {
+  components: {
+    TimerButton,
+    PersonToDoList
+  },
   name: 'app',
   data () {
     return {
       slack_client: null,
       cookie_storage: new CookieStorage(),
-      current_time_ms: null,
       running: false,
       time_passed_ms: 0,
       init_data: '',
@@ -265,12 +209,6 @@ export default {
     }
   },
   mounted: function() {
-    setInterval(()=>{
-      if(this.running) {
-        this.current_time_ms -= INTERVAL_MS;
-      }
-    }, INTERVAL_MS);
-
     let settings = this.cookie_storage.getSettings();
     if(settings) {
       this.settings = settings;
@@ -282,22 +220,6 @@ export default {
       this.data = init_data;
     }
   },
-  computed: {
-    time_left_str: function() {
-      const sign = this.current_time_ms >= 0 ? '' : '-';
-      const time_left = Math.abs(this.current_time_ms)
-      const minutes = Math.floor(time_left / 60/1000);
-      const seconds = Math.floor(time_left/1000) - minutes * 60;
-
-      const minutes_str = minutes >= 10 ? minutes : `0${minutes}`;
-      const seconds_str = seconds >= 10 ? seconds : `0${seconds}`;
-
-      return `${sign}${minutes_str}:${seconds_str}`;
-    },
-    time_is_over: function() {
-      return this.current_time_ms <= 0;
-    }
-  },
   methods: {
     areSettingsComplete: function() {
       if(!this.settings.slack_webhook) { return false; }
@@ -307,7 +229,6 @@ export default {
         isNaN(this.settings.duration_minutes)
       ) { return false; }
 
-      this.current_time_ms = this.settings.duration_minutes * 60 * 1000;
       this.slack_client = new SlackClient(this.settings.slack_webhook);
 
       return true;
@@ -325,24 +246,11 @@ export default {
     onCloseSettingsModal: function(){
       this.show_settings = !this.areSettingsComplete();
     },
-    onTimerBtnClick: function() {
-      this.running = !this.running;
-    },
     onCallBtnClick: function() {
       // send alert to channel
       this.slack_client.sendMessage(
         `<!channel> Daily -> ${this.settings.meeting_link}`
       );
-    },
-    autosize: function(event) {
-      var el = event.target;
-      this.autoresizeTextarea(el);
-    },
-    autoresizeTextarea: function(el) {
-      setTimeout(function(){
-        el.style.cssText = 'height:auto; padding:0';
-        el.style.cssText = 'height:' + 1.1*el.scrollHeight + 'px';
-      },0);
     },
     loadData: function() {
       const past_data = copyObj(this.init_data);
@@ -382,31 +290,12 @@ export default {
       console.log(parsed_obj);
       this.data = parsed_obj;
     },
-    onNotDoneBtnClick: function(person_index, goal_index) {
-      let data = copyObj(this.data);
-      if(data[person_index].goals[goal_index].status != "NOT_DONE") {
-        data[person_index].goals[goal_index].status = "NOT_DONE";
-      } else {
-        data[person_index].goals[goal_index].status = null;
-      }
-      this.data = data;
+    onPersonChange: function(person_index, new_person_val) {
+      this.$set(this.data, person_index, new_person_val);
     },
-    onInProgressBtnClick: function(person_index, goal_index) {
+    onPersonDelete: function(person_index) {
       let data = copyObj(this.data);
-      if(data[person_index].goals[goal_index].status != "IN_PROGRESS") {
-        data[person_index].goals[goal_index].status = "IN_PROGRESS";
-      } else {
-        data[person_index].goals[goal_index].status = null;
-      }
-      this.data = data;
-    },
-    onDoneBtnClick: function(person_index, goal_index) {
-      let data = copyObj(this.data);
-      if(data[person_index].goals[goal_index].status != "DONE") {
-        data[person_index].goals[goal_index].status = "DONE";
-      } else {
-        data[person_index].goals[goal_index].status = null;
-      }
+      data.splice(person_index, 1);
       this.data = data;
     },
     addPerson:  function(event){
@@ -416,20 +305,6 @@ export default {
         goals: []
       });
       event.target.value = '';
-      this.data = data;
-    },
-    addGoalToPerson: function(event, person_index) {
-      let data = copyObj(this.data);
-      data[person_index].goals.push({
-        description: event.target.value,
-        status: null
-      });
-      event.target.value = '';
-      this.data = data;
-    },
-    onDeleteGoalClick: function(person_index, goal_index) {
-      let data = copyObj(this.data);
-      data[person_index].goals.splice(goal_index, 1);
       this.data = data;
     },
     onSendClick: function() {
@@ -489,9 +364,6 @@ export default {
     width: 100%;
     box-shadow: 0px 0px 8px #0000005c;
 
-    .options {
-      float: right;
-    }
   }
 
   .person-container {
