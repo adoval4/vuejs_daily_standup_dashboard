@@ -16,7 +16,7 @@
         v-bind:key="goal_index"
       >
         <span v-tooltip="formatGoalDate(goal.date)">
-          > {{ goal.description }}
+          &bull; {{ goal.description }}
         </span>
         <ul class="navbar goal-navbar">
           <li>
@@ -76,7 +76,6 @@ Vue.use(VTooltip)
 
 export default {
   props: [
-    'key',
     'person'
   ],
   data () {
@@ -114,7 +113,7 @@ export default {
       person.goals.push({
         description: event.target.value,
         status: null,
-        date: moment().format('L')
+        date: moment().format('YYYY-MM-DD')
       });
       event.target.value = '';
       this.$emit('change', person);
@@ -123,7 +122,12 @@ export default {
       if(!goal_date) {
         return 'No date'
       }
-      return moment(goal_date, "L").fromNow();
+      let now = moment();
+      let days_passed = now.diff(moment(goal_date), 'days');
+      if(days_passed == 0) {
+        return 'Since today'
+      }
+      return `Since ${days_passed} ${days_passed > 1 ? 'days' : 'day'} ago`
     }
   }
 }
