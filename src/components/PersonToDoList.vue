@@ -57,7 +57,7 @@
       <input
         type="text"
         class="input"
-        placeholder="New goal"
+        v-bind:placeholder="`New goal for ${person.name}`"
         v-on:keyup.enter="addGoalToPerson($event, person_index)"
       >
     </div>

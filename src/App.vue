@@ -88,7 +88,7 @@
               <div class="control">
                 <input
                   class="input"
-                  placeholder="New person"
+                  placeholder="New person's name"
                   v-on:keyup.enter="addPerson"
                 >
               </div>
