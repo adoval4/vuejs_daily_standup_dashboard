@@ -16,7 +16,7 @@
         v-bind:key="goal_index"
       >
         <span v-tooltip="formatGoalDate(goal.date)">
-          &bull; {{ goal.description }}
+          &bull; {{ goal.description | first-char-capital }}
         </span>
         <ul class="navbar goal-navbar">
           <li>
@@ -58,7 +58,7 @@
         type="text"
         class="input"
         v-bind:placeholder="`New goal for ${person.name}`"
-        v-on:keyup.enter="addGoalToPerson($event, person_index)"
+        v-on:keyup.enter="addGoalToPerson($event)"
       >
     </div>
   </div>
