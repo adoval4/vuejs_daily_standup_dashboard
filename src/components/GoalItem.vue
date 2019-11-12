@@ -3,6 +3,7 @@
     class="goal-item"
   >
     <span
+      class="goal-description"
       v-show="!isEditing"
       v-tooltip="days_since"
       v-on:click="onGoalClick"
@@ -110,6 +111,9 @@ export default {
 }
 </script>
 
-<style lang="css" scoped>
+<style lang="scss" scoped>
+  span.goal-description {
+    cursor: pointer;
+  }
 </style>
 
