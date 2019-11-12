@@ -10,48 +10,14 @@
       </a>
     </div>
     <ul>
-      <li
-        class="goal-item"
+      <goal-item
         v-for="(goal, goal_index) in person.goals"
         v-bind:key="goal_index"
-      >
-        <span v-tooltip="formatGoalDate(goal.date)">
-          &bull; {{ goal.description | first-char-capital }}
-        </span>
-        <ul class="navbar goal-navbar">
-          <li>
-            <div class="buttons has-addons">
-              <a
-                class="button is-small"
-                v-bind:class="{ 'is-danger': goal.status == 'NOT_DONE' }"
-                v-on:click="onNotDoneBtnClick(goal_index)"
-              >
-                NOT DONE
-              </a>
-              <a
-                class="button is-small"
-                v-bind:class="{ 'is-warning': goal.status == 'IN_PROGRESS' }"
-                v-on:click="onInProgressBtnClick(goal_index)"
-              >
-                IN PROGRESS
-              </a>
-              <a
-                class="button is-small"
-                v-bind:class="{ 'is-success': goal.status == 'DONE' }"
-                v-on:click="onDoneBtnClick(goal_index)"
-              >
-                DONE
-              </a>
-              <a
-                class="button is-small is-danger is-light"
-                v-on:click="onDeleteGoalClick(goal_index)"
-              >
-                &times;
-              </a>
-            </div>
-          </li>
-        </ul>
-      </li>
+        v-bind:goal="goal"
+        v-on:statusChange="onGoalStatusChange(goal_index, $event)"
+        v-on:descriptionChange="onGoalDescriptionChange(goal_index, $event)"
+        v-on:delete="onDeleteGoalClick(goal_index)"
+      />
     </ul>
     <div class="">
       <input
@@ -67,6 +33,8 @@
 <script>
 import * as moment from 'moment';
 
+import GoalItem from './GoalItem.vue';
+
 import Vue from 'vue'
 import VTooltip from 'v-tooltip'
 
@@ -75,6 +43,9 @@ import { copyObj } from '../utils.js'
 Vue.use(VTooltip)
 
 export default {
+  components: {
+    GoalItem
+  },
   props: [
     'person'
   ],
@@ -94,14 +65,10 @@ export default {
       person.goals[goal_index].status = current_status != btn_status ? btn_status : null;
       this.$emit('change', person);
     },
-    onNotDoneBtnClick: function(goal_index) {
-      this.onGoalStatusChange(goal_index, "NOT_DONE");
-    },
-    onInProgressBtnClick: function(goal_index) {
-      this.onGoalStatusChange(goal_index, "IN_PROGRESS");
-    },
-    onDoneBtnClick: function(goal_index) {
-      this.onGoalStatusChange(goal_index, "DONE");
+    onGoalDescriptionChange: function(goal_index, new_description) {
+      let person = copyObj(this.person);
+      person.goals[goal_index].description = new_description;
+      this.$emit('change', person);      
     },
     onDeleteGoalClick: function(goal_index) {
       let person = copyObj(this.person);
@@ -118,17 +85,6 @@ export default {
       event.target.value = '';
       this.$emit('change', person);
     },
-    formatGoalDate: function(goal_date) {
-      if(!goal_date) {
-        return 'No date'
-      }
-      let now = moment();
-      let days_passed = now.diff(moment(goal_date), 'days');
-      if(days_passed == 0) {
-        return 'Since today'
-      }
-      return `Since ${days_passed} ${days_passed > 1 ? 'days' : 'day'} ago`
-    }
   }
 }
 </script>
