@@ -34,7 +34,7 @@ export default {
   computed: {
     time_left_str: function() {
       const time_left = this.total_time_ms - this.time_passed_ms;
-      const sign = time_left >= 0 ? '' : '-';
+      const sign = time_left >= 0 ? '' : '- ';
       const time_left_abs = Math.abs(time_left);
       const minutes = Math.floor(time_left_abs/60/1000);
       const seconds = Math.floor(time_left_abs/1000) - minutes * 60;
@@ -45,7 +45,7 @@ export default {
       return `${sign}${minutes_str}:${seconds_str}`;
     },
     time_is_over: function() {
-      return this.current_time_ms <= 0;
+      return this.total_time_ms - this.time_passed_ms <= 0;
     }
   },
   methods: {
