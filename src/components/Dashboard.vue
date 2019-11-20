@@ -2,9 +2,9 @@
   <div>
     <nav class="nav has-shadow">
       <div class="container">
-        <span class="title">
-          Daily Standup
-        </span>
+        <router-link to="/" class="title">
+          &larr; Standups | {{ meeting.name }}
+        </router-link>
         <span>
           <a
             v-bind:href="settings.meeting_link"
@@ -189,35 +189,46 @@ export default {
     TimerButton,
     PersonToDoList
   },
-  name: 'app',
   data () {
     return {
+      meeting: null,
       slack_client: null,
       cookie_storage: new CookieStorage(),
       running: false,
       time_passed_ms: 0,
       init_data: '',
-      data: null,
+      data: [],
       sent: false,
       show_settings: false,
       settings: {
         slack_webhook: null,
         meeting_link: null,
         duration_minutes: null,
-      }
+      },
+      mounted: false,
+    }
+  },
+  created: function() {
+    this.meeting = this.cookie_storage.getMeeting(
+      this.$route.params.meeting_slugname
+    );
+
+    if(this.meeting === null) {
+      this.$router.push('/')
     }
   },
   mounted: function() {
-    let settings = this.cookie_storage.getSettings();
+    let settings = this.cookie_storage.getSettings(this.meeting.slugname);
     if(settings) {
       this.settings = settings;
     }
     this.show_settings = !this.areSettingsComplete();
 
-    let init_data = this.cookie_storage.getData();
+    let init_data = this.cookie_storage.getData(this.meeting.slugname);
     if(init_data) {
       this.data = init_data;
     }
+    this.mounted = true;
   },
   methods: {
     areSettingsComplete: function() {
@@ -235,7 +246,7 @@ export default {
     onSaveSettingsBtnClick: function() {
       const settingsComplete = this.areSettingsComplete();
       if(settingsComplete) {
-        this.cookie_storage.saveSettings(this.settings);
+        this.cookie_storage.saveSettings(this.meeting.slugname, this.settings);
       }
       this.show_settings = !settingsComplete;
     },
@@ -324,7 +335,7 @@ export default {
         return person;
       });
 
-      this.cookie_storage.saveData(filtered_data);
+      this.cookie_storage.saveData(this.meeting.slugname, filtered_data);
       this.data = filtered_data;
 
       this.slack_client.sendMessage(to_do_message);
