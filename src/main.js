@@ -16,7 +16,7 @@ Vue.component('font-awesome-icon', FontAwesomeIcon)
 Vue.use(VueRouter)
 Vue.use(FirstCharCapital)
 
-const router = new VueRouter({ routes })
+const router = new VueRouter({ routes, mode: 'history' })
 
 new Vue({
   el: '#app',
