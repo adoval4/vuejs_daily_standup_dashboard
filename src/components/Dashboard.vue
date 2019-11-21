@@ -309,6 +309,7 @@ export default {
       let data = copyObj(this.data);
       data.splice(person_index, 1);
       this.data = data;
+
     },
     addPerson:  function(event){
       let data = copyObj(this.data);
@@ -318,6 +319,8 @@ export default {
       });
       event.target.value = '';
       this.data = data;
+
+      this.cookie_storage.saveData(this.meeting.slugname, this.data);
     },
     onSendClick: function() {
       let data = copyObj(this.data);
