@@ -259,7 +259,7 @@ export default {
     onCallBtnClick: function() {
       // send alert to channel
       this.slack_client.sendMessage(
-        `<!channel> Daily -> ${this.settings.meeting_link}`
+        `<!channel> ${this.meeting.name} -> ${this.settings.meeting_link}`
       );
     },
     loadData: function() {
@@ -302,6 +302,8 @@ export default {
     },
     onPersonChange: function(person_index, new_person_val) {
       this.$set(this.data, person_index, new_person_val);
+
+      this.cookie_storage.saveData(this.meeting.slugname, this.data);
     },
     onPersonDelete: function(person_index) {
       let data = copyObj(this.data);

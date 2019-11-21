@@ -21,7 +21,7 @@
         v-on:blur="onGoalDescriptionChange"
       >
     </span>
-    <ul v-show="!isEditing" class="navbar goal-navbar">
+    <ul v-show="!isEditing" class="navbar goal-navbar ">
       <li>
         <div class="buttons has-addons">
           <a
