@@ -3,12 +3,12 @@
     class="button"
     v-bind:class="{
       'is-info': !running,
-      'is-link': (running && !time_is_over),
+      'is-warning': (running && !time_is_over),
       'is-danger': (running && time_is_over)
     }"
     v-on:click="onClick"
   >
-    Time: {{ time_left_str }}
+    {{ title }} {{ time_left_str }}
   </a>
 </template>
 
@@ -21,7 +21,8 @@ export default {
     return {
       time_passed_ms: 0,
       running: false,
-      interval_ms: 100
+      interval_ms: 100,
+      title: 'Start'
     }
   },
   mounted: function() {
@@ -51,6 +52,7 @@ export default {
   methods: {
     onClick: function() {
       this.running = !this.running;
+      this.title = this.running ? 'Pause' : 'Resume'
     }
   }
 }

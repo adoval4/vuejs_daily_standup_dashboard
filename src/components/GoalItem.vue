@@ -23,7 +23,7 @@
     </span>
     <ul v-show="!isEditing" class="navbar goal-navbar ">
       <li>
-        <div class="buttons has-addons">
+        <div v-show="!isEditing" class="buttons has-addons">
           <a
             class="button is-small"
             v-bind:class="{ 'is-danger': goal.status == 'NOT_DONE' }"

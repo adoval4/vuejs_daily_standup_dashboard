@@ -3,35 +3,31 @@
     <nav class="nav has-shadow">
       <div class="container">
         <router-link to="/" class="title">
-          &larr; Standups | {{ meeting.name }}
+          <span class="logo">&larr; Standup &mdash; </span>{{ meeting.name }} 
         </router-link>
         <span>
           <a
+            id="meeting-link-btn"
             v-bind:href="settings.meeting_link"
             target="_blank"
             rel="noopener noreferrer"
+            v-show="false"
           >
             Conference link
           </a>
         </span>
         <span class="options is-pulled-right">
-          <a
-            class="button is-light"
-            v-on:click="onSettingsBtnClick"
-          >
-            <font-awesome-icon icon="cog" />
-          </a>
-          <a
+          <!-- <a
             class="button is-danger is-light"
             v-on:click="onDeleteDataClick"
           >
             Delete all
-          </a>
+          </a> -->
           <a
-            class="button"
+            class="button is-light"
             v-on:click="onCallBtnClick"
           >
-            Call @channel
+            Call team
           </a>
           <timer-button
             v-bind:total_time_ms="settings.duration_minutes * 60 * 1000"
@@ -46,6 +42,12 @@
             <span v-if="sent">
               Saved
             </span>
+          </a>
+          <a
+            class="button is-light"
+            v-on:click="onSettingsBtnClick"
+          >
+            <font-awesome-icon icon="cog" />
           </a>
         </span>
       </div>
@@ -194,9 +196,6 @@ export default {
       meeting: null,
       slack_client: null,
       cookie_storage: new CookieStorage(),
-      running: false,
-      time_passed_ms: 0,
-      init_data: '',
       data: [],
       sent: false,
       show_settings: false,
@@ -258,6 +257,9 @@ export default {
     },
     onCallBtnClick: function() {
       // send alert to channel
+      const meeting_a_tag = document.getElementById('meeting-link-btn');
+      meeting_a_tag.click();
+
       this.slack_client.sendMessage(
         `<!channel> ${this.meeting.name} -> ${this.settings.meeting_link}`
       );
@@ -352,3 +354,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+  .logo {
+    font-family: 'Montserrat Alternates', sans-serif;
+  }
+</style>
